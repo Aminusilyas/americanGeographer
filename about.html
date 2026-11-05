@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About | American Geographer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-page="about">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand-box">
+          <div class="brand-mark" aria-hidden="true">
+            <span class="material-symbols-outlined">explore</span>
+          </div>
+          <div class="brand-copy">
+            <div class="brand-row">
+              <h1 class="brand-name">American Geographer</h1>
+              <span class="material-symbols-outlined" style="font-size:16px; color:var(--primary);">north</span>
+            </div>
+            <div class="brand-status">
+              <span class="indicator"></span>
+              <span>Modern elegance rooted in Hausa tradition</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <button class="header-icon-button search-toggle" type="button" aria-label="Open product search" aria-expanded="false">
+            <span class="material-symbols-outlined">search</span>
+          </button>
+          <a class="contact-pill" href="contact.html">
+            <span class="material-symbols-outlined" style="font-size:18px; color:var(--primary);">phone_in_talk</span>
+            <span>Contact</span>
+          </a>
+          <button class="header-icon-button cart-toggle" type="button" aria-label="Shopping bag, 0 items" aria-controls="cartDrawer">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            <span class="cart-count" data-cart-count>0</span>
+          </button>
+        </div>
+      </div>
+      <form class="search-panel" role="search" action="products.html">
+        <label class="visually-hidden" for="siteSearch">Search clothing</label>
+        <input id="siteSearch" type="search" name="q" placeholder="Search Babban Riga, Jallabiya, and more..." autocomplete="off" />
+        <button class="search-submit" type="submit" aria-label="Submit search">
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+      </form>
+    </header>
+
+    <div class="page-shell">
+      <main>
+        <section class="section-panel">
+          <div class="story-grid">
+            <div class="story-content">
+              <h3>Hausa heritage, tailored for today.</h3>
+              <p>American Geographer celebrates the elegance and artistry of Hausa traditional menswear. Our collection brings heritage silhouettes into the present with a considered eye for detail, finish, and occasion.</p>
+              <p>From the flowing Babban Riga to refined Jallabiya and coordinated Yar ciki sets, each piece honors a rich tradition of dressing with dignity and distinction.</p>
+            </div>
+            <div class="story-image">
+              <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80" alt="Menswear editorial portrait" />
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-box">
+              <strong>Heritage</strong>
+              <span>Rooted in Hausa tradition</span>
+            </div>
+            <div class="stat-box">
+              <strong>Artistry</strong>
+              <span>Details made to be admired</span>
+            </div>
+            <div class="stat-box">
+              <strong>Modern</strong>
+              <span>Tradition, thoughtfully tailored</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-panel">
+          <h3>What we stand for</h3>
+          <div class="values-grid">
+            <div class="value-card">
+              <span class="material-symbols-outlined">checkroom</span>
+              <h4>Craftsmanship</h4>
+              <p>We celebrate fine finishing, expressive embroidery, and the details that give traditional wear its character.</p>
+            </div>
+            <div class="value-card">
+              <span class="material-symbols-outlined">all_inclusive</span>
+              <h4>Hausa Heritage</h4>
+              <p>Our styles honor the garments, artistry, and cultural pride of Hausa tradition.</p>
+            </div>
+            <div class="value-card">
+              <span class="material-symbols-outlined">travel_explore</span>
+              <h4>Modern Elegance</h4>
+              <p>Classic silhouettes meet thoughtful, contemporary tailoring for today's occasions.</p>
+            </div>
+            <div class="value-card">
+              <span class="material-symbols-outlined">public</span>
+              <h4>Wear with Pride</h4>
+              <p>We believe traditional attire can feel personal, distinguished, and unmistakably your own.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-panel">
+          <h3>Our promise</h3>
+          <p>We bring Hausa heritage and modern elegance together in Babban Riga, Jallabiya, and traditional two-piece sets—made for moments worth dressing for.</p>
+          <a class="primary-btn promise-cta" href="products.html">
+            <span>Explore New Arrivals</span>
+            <span class="material-symbols-outlined" style="font-size:18px;">arrow_forward</span>
+          </a>
+        </section>
+      </main>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <div class="bottom-nav-inner">
+        <a class="nav-item" href="index.html">
+          <span class="material-symbols-outlined">home</span>
+          <span>Home</span>
+        </a>
+        <a class="nav-item active" href="about.html">
+          <span class="material-symbols-outlined">info</span>
+          <span>About</span>
+        </a>
+        <a class="nav-item" href="products.html">
+          <span class="material-symbols-outlined">checkroom</span>
+          <span>Shop</span>
+        </a>
+        <a class="nav-item" href="contact.html">
+          <span class="material-symbols-outlined">call</span>
+          <span>Contact</span>
+        </a>
+      </div>
+    </nav>
+
+    <script src="script.js"></script>
+  </body>
+</html>
