@@ -1,6 +1,12 @@
 const SUPABASE_URL = 'PASTE_YOUR_SUPABASE_URL_HERE';
 const SUPABASE_ANON_KEY = 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE';
-const CART_STORAGE_KEY = 'americanGeographerCart';
+const CART_STORAGE_KEY = 'americanGeographerCartV2';
+const CATALOG_CATEGORIES = new Set([
+  'babban-riga',
+  'jallabiya',
+  'yar-ciki',
+  'caps-accessories'
+]);
 
 const isSupabaseConfigured = () => {
   return SUPABASE_URL && SUPABASE_ANON_KEY &&
@@ -33,6 +39,9 @@ const formatCurrency = (amount) => {
 
 document.addEventListener('DOMContentLoaded', () => {
   const page = document.body.dataset.page;
+  const supabaseClient = window.supabase && window.SUPABASE_CONFIG?.url && window.SUPABASE_CONFIG?.publishableKey
+    ? window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.publishableKey)
+    : null;
   let cart = [];
   let lastCartTrigger = null;
 
@@ -46,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       cart = parsedCart.filter((item) =>
         item &&
+        typeof item.productId === 'string' &&
         typeof item.name === 'string' &&
         Number.isFinite(item.price) &&
         Number.isInteger(item.quantity) &&
@@ -89,6 +99,31 @@ document.addEventListener('DOMContentLoaded', () => {
   cartItems.className = 'cart-items';
   cartItems.dataset.cartItems = '';
 
+  const checkoutForm = document.createElement('form');
+  checkoutForm.className = 'checkout-form';
+  checkoutForm.id = 'checkoutForm';
+  checkoutForm.hidden = true;
+  checkoutForm.innerHTML = `
+    <p class="checkout-intro">Delivery details</p>
+    <label class="checkout-field">Full name
+      <input name="customerName" type="text" autocomplete="name" minlength="2" maxlength="120" required />
+    </label>
+    <label class="checkout-field">Email
+      <input name="customerEmail" type="email" autocomplete="email" required />
+    </label>
+    <label class="checkout-field">Phone
+      <input name="customerPhone" type="tel" autocomplete="tel" minlength="5" maxlength="40" required />
+    </label>
+    <label class="checkout-field">Delivery address
+      <textarea name="deliveryAddress" autocomplete="street-address" minlength="8" maxlength="500" required></textarea>
+    </label>
+    <p class="checkout-note">Payment is not collected online. We’ll confirm your order with you.</p>
+  `;
+  const backToBagButton = document.createElement('button');
+  backToBagButton.className = 'cart-back-button';
+  backToBagButton.type = 'button';
+  backToBagButton.textContent = 'Back to bag';
+
   const cartFooter = document.createElement('div');
   cartFooter.className = 'cart-footer';
   const subtotalRow = document.createElement('div');
@@ -104,7 +139,24 @@ document.addEventListener('DOMContentLoaded', () => {
   checkoutButton.dataset.cartCheckout = '';
   checkoutButton.textContent = 'Checkout';
   cartFooter.append(subtotalRow, checkoutButton);
-  drawer.append(drawerHeader, cartItems, cartFooter);
+  const checkoutFooter = document.createElement('div');
+  checkoutFooter.className = 'cart-footer checkout-footer';
+  checkoutFooter.hidden = true;
+  const checkoutSubtotal = document.createElement('div');
+  checkoutSubtotal.className = 'cart-subtotal';
+  const checkoutSubtotalLabel = document.createElement('span');
+  checkoutSubtotalLabel.textContent = 'Subtotal';
+  const checkoutSubtotalAmount = document.createElement('strong');
+  checkoutSubtotalAmount.dataset.checkoutSubtotal = '';
+  checkoutSubtotal.append(checkoutSubtotalLabel, checkoutSubtotalAmount);
+  const submitOrderButton = document.createElement('button');
+  submitOrderButton.className = 'primary-btn cart-checkout';
+  submitOrderButton.type = 'submit';
+  submitOrderButton.setAttribute('form', checkoutForm.id);
+  submitOrderButton.dataset.cartOrderSubmit = '';
+  submitOrderButton.textContent = 'Place order';
+  checkoutFooter.append(checkoutSubtotal, backToBagButton, submitOrderButton);
+  drawer.append(drawerHeader, cartItems, checkoutForm, cartFooter, checkoutFooter);
   document.body.append(drawerOverlay, drawer);
 
   const getCartCount = () => cart.reduce((total, item) => total + item.quantity, 0);
@@ -131,6 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cartItems.replaceChildren();
     subtotalAmount.textContent = formatCurrency(subtotal);
+    checkoutSubtotalAmount.textContent = formatCurrency(subtotal);
     checkoutButton.disabled = itemCount === 0;
 
     if (cart.length === 0) {
@@ -164,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const decreaseButton = document.createElement('button');
       decreaseButton.type = 'button';
       decreaseButton.dataset.cartAction = 'decrease';
-      decreaseButton.dataset.itemName = item.name;
+      decreaseButton.dataset.itemId = item.productId;
       decreaseButton.setAttribute('aria-label', `Remove one ${item.name}`);
       decreaseButton.textContent = '−';
       const quantity = document.createElement('span');
@@ -172,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const increaseButton = document.createElement('button');
       increaseButton.type = 'button';
       increaseButton.dataset.cartAction = 'increase';
-      increaseButton.dataset.itemName = item.name;
+      increaseButton.dataset.itemId = item.productId;
       increaseButton.setAttribute('aria-label', `Add one ${item.name}`);
       increaseButton.textContent = '+';
       quantityControls.append(decreaseButton, quantity, increaseButton);
@@ -182,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
       removeButton.className = 'cart-remove';
       removeButton.type = 'button';
       removeButton.dataset.cartAction = 'remove';
-      removeButton.dataset.itemName = item.name;
+      removeButton.dataset.itemId = item.productId;
       removeButton.setAttribute('aria-label', `Remove ${item.name} from bag`);
       removeButton.innerHTML = '<span class="material-symbols-outlined">delete</span>';
       row.append(image, details, removeButton);
@@ -198,9 +251,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isOpen) {
       closeButton.focus();
-    } else if (lastCartTrigger) {
-      lastCartTrigger.focus();
+    } else {
+      setCheckoutMode(false);
+      if (lastCartTrigger) lastCartTrigger.focus();
     }
+  };
+
+  let checkoutMode = false;
+  const setCheckoutMode = (isOpen) => {
+    checkoutMode = isOpen;
+    cartItems.hidden = isOpen;
+    checkoutForm.hidden = !isOpen;
+    cartFooter.hidden = isOpen;
+    checkoutFooter.hidden = !isOpen;
+    drawerTitle.textContent = isOpen ? 'Delivery details' : 'Your bag';
+    if (isOpen) checkoutForm.querySelector('input')?.focus();
   };
 
   renderCart();
@@ -218,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const button = event.target.closest('[data-cart-action]');
     if (!button) return;
 
-    const itemIndex = cart.findIndex((item) => item.name === button.dataset.itemName);
+    const itemIndex = cart.findIndex((item) => item.productId === button.dataset.itemId);
     if (itemIndex < 0) return;
 
     if (button.dataset.cartAction === 'increase') {
@@ -235,8 +300,50 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   checkoutButton.addEventListener('click', () => {
-    if (getCartCount() > 0) {
-      showToast('Checkout is not connected yet. Your bag is saved.');
+    if (getCartCount() > 0) setCheckoutMode(true);
+  });
+
+  backToBagButton.addEventListener('click', () => setCheckoutMode(false));
+
+  checkoutForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!supabaseClient) {
+      showToast('Supabase is unavailable. Please try again later.', true);
+      return;
+    }
+
+    const submitButton = drawer.querySelector('[data-cart-order-submit]');
+    const formData = new FormData(checkoutForm);
+    const customer = {
+      p_customer_name: String(formData.get('customerName') || '').trim(),
+      p_customer_email: String(formData.get('customerEmail') || '').trim(),
+      p_customer_phone: String(formData.get('customerPhone') || '').trim(),
+      p_delivery_address: String(formData.get('deliveryAddress') || '').trim(),
+      p_items: cart.map((item) => ({
+        product_id: item.productId,
+        quantity: item.quantity
+      }))
+    };
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'Placing order...';
+    try {
+      const { data: orderId, error } = await supabaseClient.rpc('place_order', customer);
+      if (error) throw error;
+
+      cart = [];
+      saveCart();
+      renderCart();
+      checkoutForm.reset();
+      setCheckoutMode(false);
+      setDrawerOpen(false);
+      showToast(`Order placed. Reference: ${String(orderId).slice(0, 8).toUpperCase()}`);
+    } catch (error) {
+      console.error('Supabase order submission failed:', error);
+      showToast(error.message || 'We could not place your order. Please try again.', true);
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = 'Place order';
     }
   });
 
@@ -271,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchIcon) searchIcon.textContent = 'close';
   }
 
-  const searchCards = [...document.querySelectorAll('.product-card, .feature-card')];
+  const searchCards = () => [...document.querySelectorAll('.product-card, .feature-card')];
   const searchStatus = document.createElement('p');
   searchStatus.className = 'search-empty-state';
   searchStatus.setAttribute('role', 'status');
@@ -288,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeFilter = document.querySelector('.filter-chip.active')?.dataset.filter || 'all';
     let visibleCount = 0;
 
-    searchCards.forEach((card) => {
+    searchCards().forEach((card) => {
       const matchesSearch = !term || card.textContent.toLocaleLowerCase().includes(term);
       const matchesCategory = !card.classList.contains('product-card') ||
         activeFilter === 'all' ||
@@ -325,44 +432,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.querySelectorAll('.add-button').forEach((button) => {
-    button.addEventListener('click', () => {
-      const card = button.closest('.product-card');
-      const name = card?.querySelector('h5')?.textContent.trim();
-      const priceText = card?.querySelector('.product-bottom strong')?.textContent.replace(/[^\d.]/g, '');
-      const price = Number.parseFloat(priceText || '');
-      if (!name || !Number.isFinite(price)) {
-        showToast('This item could not be added to your bag.', true);
-        return;
-      }
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('.add-button');
+    if (!button) return;
 
-      const existingItem = cart.find((item) => item.name === name);
-      if (existingItem) {
-        existingItem.quantity += 1;
-      } else {
-        cart.push({
-          name,
-          price,
-          quantity: 1,
-          image: card.querySelector('img')?.getAttribute('src') || '',
-          category: card.dataset.category || ''
-        });
-      }
+    const card = button.closest('.product-card');
+    const productId = card?.dataset.productId;
+    const name = card?.querySelector('h5')?.textContent.trim();
+    const priceText = card?.querySelector('.product-bottom strong')?.textContent.replace(/[^\d.]/g, '');
+    const price = Number.parseFloat(priceText || '');
+    if (!productId || !name || !Number.isFinite(price)) {
+      showToast('This item could not be added to your bag.', true);
+      return;
+    }
 
-      saveCart();
-      renderCart();
-      button.classList.add('success');
-      const icon = button.querySelector('.material-symbols-outlined');
-      if (icon) {
-        const previousIcon = icon.textContent;
-        icon.textContent = 'done';
-        window.setTimeout(() => {
-          icon.textContent = previousIcon;
-          button.classList.remove('success');
-        }, 1000);
-      }
-      showToast(`${name} added to your bag.`);
-    });
+    const existingItem = cart.find((item) => item.productId === productId);
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      cart.push({
+        productId,
+        name,
+        price,
+        quantity: 1,
+        image: card.querySelector('img')?.getAttribute('src') || '',
+        category: card.dataset.category || ''
+      });
+    }
+
+    saveCart();
+    renderCart();
+    button.classList.add('success');
+    const icon = button.querySelector('.material-symbols-outlined');
+    if (icon) {
+      const previousIcon = icon.textContent;
+      icon.textContent = 'done';
+      window.setTimeout(() => {
+        icon.textContent = previousIcon;
+        button.classList.remove('success');
+      }, 1000);
+    }
+    showToast(`${name} added to your bag.`);
   });
 
   const form = document.querySelector('#contactForm');
@@ -436,4 +546,172 @@ document.addEventListener('DOMContentLoaded', () => {
       applySearchAndFilter();
     });
   });
+
+  const productGrid = document.querySelector('.product-grid');
+  const showcaseList = document.querySelector('.showcase-list');
+  const makeCatalogMessage = (message) => {
+    const status = document.createElement('p');
+    status.className = 'catalog-status';
+    status.setAttribute('role', 'status');
+    status.textContent = message;
+    return status;
+  };
+
+  const makeProductCard = (product) => {
+    const card = document.createElement('article');
+    card.className = 'product-card';
+    card.dataset.productId = product.id;
+    card.dataset.category = product.category;
+
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'product-image';
+    const image = document.createElement('img');
+    image.src = product.image_url;
+    image.alt = product.name;
+    image.loading = 'lazy';
+    imageContainer.append(image);
+
+    if (product.label) {
+      const tag = document.createElement('span');
+      tag.className = 'product-tag';
+      tag.textContent = product.label;
+      imageContainer.append(tag);
+    }
+
+    const name = document.createElement('h5');
+    name.textContent = product.name;
+    const description = document.createElement('p');
+    description.textContent = product.description;
+    const footer = document.createElement('div');
+    footer.className = 'product-bottom';
+    const price = document.createElement('strong');
+    price.textContent = formatCurrency(product.price);
+    const addButton = document.createElement('button');
+    addButton.type = 'button';
+    addButton.className = 'add-button';
+    addButton.setAttribute('aria-label', `Add ${product.name} to bag`);
+    addButton.innerHTML = '<span class="material-symbols-outlined">add</span>';
+    footer.append(price, addButton);
+    card.append(imageContainer, name, description, footer);
+    return card;
+  };
+
+  const makeFeatureCard = (product) => {
+    const card = document.createElement('article');
+    card.className = 'feature-card';
+    card.dataset.productId = product.id;
+    card.dataset.category = product.category;
+
+    const imageContainer = document.createElement('div');
+    imageContainer.className = 'feature-image';
+    const image = document.createElement('img');
+    image.src = product.image_url;
+    image.alt = product.name;
+    image.loading = 'lazy';
+    imageContainer.append(image);
+
+    const label = document.createElement('div');
+    label.className = 'badge-box';
+    label.textContent = product.label || 'Featured piece';
+    const featureBadge = document.createElement('div');
+    featureBadge.className = 'special-badge';
+    featureBadge.textContent = 'Featured';
+    imageContainer.append(label, featureBadge);
+
+    const name = document.createElement('h4');
+    name.textContent = product.name;
+    const description = document.createElement('p');
+    description.textContent = product.description;
+    const footer = document.createElement('div');
+    footer.className = 'feature-footer';
+    const priceBlock = document.createElement('div');
+    priceBlock.className = 'price-block';
+    const price = document.createElement('strong');
+    price.textContent = formatCurrency(product.price);
+    priceBlock.append(price);
+    const shopLink = document.createElement('a');
+    shopLink.className = 'primary-btn';
+    shopLink.href = `products.html?q=${encodeURIComponent(product.name)}`;
+    shopLink.append(document.createTextNode('Shop now '));
+    const icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.textContent = 'arrow_forward';
+    shopLink.append(icon);
+    footer.append(priceBlock, shopLink);
+    card.append(imageContainer, name, description, footer);
+    return card;
+  };
+
+  const loadCatalog = async () => {
+    if (!productGrid && !showcaseList) return;
+    productGrid?.replaceChildren(makeCatalogMessage('Loading the collection…'));
+    showcaseList?.replaceChildren(makeCatalogMessage('Loading featured pieces…'));
+
+    if (!supabaseClient) {
+      const message = 'The catalog connection is unavailable. Check the Supabase client and configuration.';
+      productGrid?.replaceChildren(makeCatalogMessage(message));
+      showcaseList?.replaceChildren(makeCatalogMessage(message));
+      showToast(message, true);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('products')
+        .select('id, name, description, price, category, image_url, label, featured')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const products = data.map((product) => {
+        const price = Number(product.price);
+        if (
+          !product.id ||
+          !product.name ||
+          !CATALOG_CATEGORIES.has(product.category) ||
+          !Number.isFinite(price) ||
+          !product.image_url
+        ) {
+          throw new TypeError('A catalog record is missing a required field or has an invalid value.');
+        }
+
+        return {
+          ...product,
+          price,
+          description: product.description || '',
+          label: product.label || ''
+        };
+      });
+
+      if (products.length === 0) {
+        productGrid?.replaceChildren(makeCatalogMessage('The collection is being prepared. Please check back soon.'));
+        showcaseList?.replaceChildren(makeCatalogMessage('Featured pieces will appear here soon.'));
+        return;
+      }
+
+      if (productGrid) {
+        productGrid.replaceChildren(...products.map(makeProductCard));
+      }
+
+      if (showcaseList) {
+        const featuredProducts = products.filter((product) => product.featured).slice(0, 4);
+        showcaseList.replaceChildren(
+          ...(featuredProducts.length
+            ? featuredProducts.map(makeFeatureCard)
+            : [makeCatalogMessage('Featured pieces will appear here soon.')])
+        );
+      }
+
+      applySearchAndFilter();
+    } catch (error) {
+      console.error('Supabase product catalog query failed:', error);
+      const message = 'We could not load the collection. Check the Supabase products table and its access policy.';
+      productGrid?.replaceChildren(makeCatalogMessage(message));
+      showcaseList?.replaceChildren(makeCatalogMessage(message));
+      showToast(message, true);
+    }
+  };
+
+  void loadCatalog();
 });

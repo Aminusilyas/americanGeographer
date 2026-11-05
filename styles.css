@@ -103,20 +103,16 @@ button {
 }
 
 .brand-mark {
-  width: 44px;
+  width: 58px;
   height: 44px;
-  border-radius: 50%;
-  background: rgba(128, 96, 31, 0.1);
-  border: 1px solid rgba(128, 96, 31, 0.24);
   display: grid;
   place-items: center;
-  overflow: hidden;
   flex-shrink: 0;
 }
 
 .brand-mark img {
-  width: 30px;
-  height: 30px;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -703,6 +699,25 @@ main {
   display: none;
 }
 
+.catalog-status {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.product-grid > .catalog-status {
+  grid-column: 1 / -1;
+}
+
+.showcase-list > .catalog-status {
+  min-width: 100%;
+}
+
 .search-empty-state {
   margin: 20px 0;
   padding: 18px;
@@ -1233,6 +1248,80 @@ body.cart-open {
 .cart-footer {
   padding-top: 18px;
   border-top: 1px solid var(--line);
+}
+
+.cart-footer[hidden],
+.checkout-form[hidden],
+.cart-items[hidden] {
+  display: none;
+}
+
+.checkout-form {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.checkout-intro {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.checkout-field {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.checkout-field input,
+.checkout-field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  outline: none;
+  background: var(--surface);
+  color: var(--dark);
+  font: inherit;
+  font-size: 14px;
+}
+
+.checkout-field textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.checkout-field input:focus,
+.checkout-field textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(198, 155, 69, 0.15);
+}
+
+.checkout-note {
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.cart-back-button {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--dark);
+  font-weight: 700;
+}
+
+.cart-back-button:hover {
+  background: var(--surface-2);
 }
 
 .cart-subtotal {

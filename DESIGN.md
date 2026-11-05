@@ -24,6 +24,8 @@ American Geographer presents high-end Hausa traditional menswear with modern ele
 
 The experience should feel considered and easy to browse: highlight Babban Riga, Jallabiya, Yar ciki sets, and traditional caps and accessories, while keeping product details scannable on mobile and desktop.
 
+Use the supplied `logo.png` in the shared header brand mark on every page, preserving its original wide aspect ratio.
+
 ## Colors
 
 - **Warm canvas (`#FBF8F1`)** keeps the page light and comfortable.
@@ -47,11 +49,13 @@ The experience should feel considered and easy to browse: highlight Babban Riga,
 
 ## Product Content
 
-Organize menswear into Babban Riga, Jallabiya, Yar ciki Sets, and Caps & Accessories. The current remote Unsplash photos are generic editorial placeholders, not photographs of the listed Hausa garments; replace them with accurate product photography and alt text before launch. Product titles, descriptions, and prices in the current HTML are also demonstration content.
+Organize menswear into Babban Riga, Jallabiya, Yar ciki Sets, and Caps & Accessories. Add catalog records to Supabase with `name`, `description`, `price`, `category`, `image_url`, `label`, `featured`, and `active` fields. The current remote Unsplash photos are generic editorial placeholders, not photographs of Hausa garments; use accurate product photography in each `image_url` before launch.
 
 ## Interaction Notes
 
 - Header search opens an inline search field and filters matching products; submitted searches open the Shop page with the query applied.
 - The shopping bag is available on every page, persists in local storage, and supports quantity changes and item removal.
-- Checkout is a front-end placeholder; payment and order processing are not connected.
-- The contact form requires Supabase configuration in `script.js` and a matching `contact_messages` table before it can deliver messages.
+- The product catalog is read from the Supabase `products` table.
+- Checkout submits guest delivery details through the `place_order` database function. The function verifies active product prices in the database and creates a pending order; online payment is not connected.
+- Apply `supabase-schema.sql` in the Supabase SQL Editor to create the catalog, orders, policies, and order function. Add catalog records through the Supabase dashboard with one of the supported category slugs.
+- The contact form is not connected by the catalog/orders setup and requires its own backend table and access policy.
